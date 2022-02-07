@@ -1,4 +1,7 @@
+# by: iElden
 
+NON_APEX_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']
+DIVS = ['IV', 'III', 'II', 'I']
 
 class Summoner:
     def __init__(self, **kwargs):
@@ -7,7 +10,7 @@ class Summoner:
         self.leagueId = kwargs.get('leagueId', None)
         self.tier = kwargs.get('tier', None)
         self.rank = kwargs.get('rank', None)
-        self.LeaguePoints = kwargs.get('LeaguePoints', None)
+        self.leaguePoints = kwargs.get('leaguePoints', None)
         self.wins = kwargs.get('wins', None)
         self.losses = kwargs.get('losses', None)
         self.veteran = kwargs.get('veteran', None)
@@ -16,7 +19,7 @@ class Summoner:
         self.hotStreak = kwargs.get('hotStreak', None)
 
         self.match_crawled = kwargs.get('match_crawled', False)
-        self.league_page = kwargs.get('match_crawled', 1)
+        self.league_page = kwargs.get('league_page', 1)
 
     def as_dict(self):
         return self.__dict__
