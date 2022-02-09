@@ -1,12 +1,16 @@
 # by: iElden
 
+
+APEX_TIERS = ['MASTER', 'GRANDMASTER', 'CHALLENGER']
 NON_APEX_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']
+TIERS = NON_APEX_TIERS + APEX_TIERS
 DIVS = ['IV', 'III', 'II', 'I']
 
 class Summoner:
     def __init__(self, **kwargs):
-        self._id = kwargs.get('summonerId')
-        self.summonerName = kwargs.get('summonerName', None)
+        self._id = kwargs.get('_id', None) or kwargs.get('summonerId')
+        self.puuid = kwargs.get('puuid', None)
+        self.summonerName = kwargs.get('summonerName', None) or kwargs.get('name', None)
         self.leagueId = kwargs.get('leagueId', None)
         self.tier = kwargs.get('tier', None)
         self.rank = kwargs.get('rank', None)
@@ -21,6 +25,10 @@ class Summoner:
         self.match_crawled = kwargs.get('match_crawled', False)
         self.league_page = kwargs.get('league_page', 1)
 
+    @property
+    def id(self):
+        return self._id
+
     def as_dict(self):
         return self.__dict__
 
@@ -28,6 +36,9 @@ class Summoner:
 class Match:
     def __init__(self, json):
         self.json = json
+
+    def __getitem__(self, item):
+        return self.json[item]
 
     @property
     def _id(self):

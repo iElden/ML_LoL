@@ -13,4 +13,4 @@ async def add_non_apex_players_to_db():
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(add_non_apex_players_to_db())
+    loop.run_until_complete(data_crawler.add_all_matchs())

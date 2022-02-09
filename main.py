@@ -1,15 +1,52 @@
+import asyncio
 from typing import Tuple
 
 import sys
 import json
+from typing import List, Dict, Tuple, Any
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
+
+from DataCrawler.DataCrawler import DataCrawler
+from DataCrawler.Database import Database
+from DataCrawler.DbModel import Match, Summoner
+
+db = Database()
+
+RANK_TO_CLASS = {
+    ('IRON', 'IV'): 0,
+    ('IRON', 'III'): 1,
+    ('IRON', 'II'): 2,
+    ('IRON', 'I'): 3,
+    ('BRONZE', 'IV'): 4,
+    ('BRONZE', 'III'): 5,
+    ('BRONZE', 'II'): 6,
+    ('BRONZE', 'I'): 7,
+    ('SILVER', 'IV'): 8,
+    ('SILVER', 'III'): 9,
+    ('SILVER', 'II'): 10,
+    ('SILVER', 'I'): 11,
+    ('GOLD', 'IV'): 12,
+    ('GOLD', 'III'): 13,
+    ('GOLD', 'II'): 14,
+    ('GOLD', 'I'): 15,
+    ('PLATINUM', 'IV'): 16,
+    ('PLATINUM', 'III'): 17,
+    ('PLATINUM', 'II'): 18,
+    ('PLATINUM', 'I'): 19,
+    ('DIAMOND', 'IV'): 20,
+    ('DIAMOND', 'III'): 21,
+    ('DIAMOND', 'II'): 22,
+    ('DIAMOND', 'I'): 23,
+    ('MASTER', 'I'): 24,
+    ('GRANDMASTER', 'I'): 25,
+    ('CHALLENGER', 'I'): 26,
+}
 
 NB_GAMES = 20
 
@@ -20,7 +57,7 @@ cooldowns = {
     "6": 210,   # SummonerHaste      Ghost"
     "7": 240,   # SummonerHeal       Heal"
     "11": 15,   # SummonerSmite      Smite"
-    "12": 0,    # SummonerTeleport   Teleport"
+    "12": 360,    # SummonerTeleport   Teleport"
     "13": 240,  # SummonerMana       Clarity"
     "14": 180,  # SummonerDot        Ignite"
     "21": 180,  # SummonerBarrier    Barrier"
@@ -28,8 +65,8 @@ cooldowns = {
     "31": 20,   # SummonerPoroThrow  Poro Toss"
     "32": 80,   # SummonerSnowball   Mark"
     "39": 80,   # SummonerSnowURFSnowball_Mark     Mark
-    "54": 0,    # Summoner_UltBookPlaceholder      Placeholder
-    "55": 0,    # Summoner_UltBookSmitePlaceholder Placeholder and Attack-Smite
+    "54": 1,    # Summoner_UltBookPlaceholder      Placeholder
+    "55": 1,    # Summoner_UltBookSmitePlaceholder Placeholder and Attack-Smite
 }
 
 participant_all_fields = [
@@ -227,15 +264,15 @@ ranksNames = [
 ]
 
 def get_match(summoner, match):
-    with open("message.json") as fd:
-        data = json.load(fd)["info"]
-    participant = [k for k in data["participants"] if k["summonerName"] == summoner][0]
+    data = match['info']
+    participant : Dict[str, Any] = [k for k in data["participants"] if k["puuid"] == summoner.puuid][0]
     realData = {i: k for i, k in participant.items() if i in participant_fields}
     for i in info_fields:
         realData[i] = data[i]
     return realData
 
-def preprocess_match(match_data):
+def preprocess_match(match : Match, summoner : Summoner) -> dict:
+    match_data = get_match(summoner, match)
     new_data = {}
     # Lvl6Time
 
@@ -305,45 +342,6 @@ def preprocess_match(match_data):
     new_data["win"] = match_data["win"]
     return new_data
 
-def get_history(summoner):
-    return [preprocess_match(get_match(summoner, i)) for i in range(NB_GAMES)]
-
-def get_summoners():
-    return ["iElden"]
-
-def get_rank(summoner):
-    ranks = {
-        "IRONIV": 0,
-        "IRONIII": 1,
-        "IRONII": 2,
-        "IRONI": 3,
-        "BRONZEIV": 4,
-        "BRONZEIII": 5,
-        "BRONZEII": 6,
-        "BRONZEI": 7,
-        "SILVERIV": 8,
-        "SILVERIII": 9,
-        "SILVERII": 10,
-        "SILVERI": 11,
-        "GOLDIV": 12,
-        "GOLDIII": 13,
-        "GOLDII": 14,
-        "GOLDI": 15,
-        "PLATINUMIV": 16,
-        "PLATINUMIII": 17,
-        "PLATINUMII": 18,
-        "PLATINUMI": 19,
-        "DIAMONDIV": 20,
-        "DIAMONDIII": 21,
-        "DIAMONDII": 22,
-        "DIAMONDI": 23,
-        "MASTERI": 24,
-        "GRANDMASTERI": 25,
-        "CHALLENGERI": 26,
-    }
-
-    return ranks["DIAMONDIV"]
-
 def calc_mean_matches(matches):
     summed_up = {}
     for match in matches:
@@ -354,10 +352,15 @@ def calc_mean_matches(matches):
                 summed_up[key] += value
     return {key: value / len(matches) for key, value in summed_up.items()}
 
+HISTORY = List[dict]
+RANK_ID = int
+
 def prepare_data(df):
-    ranks = [get_rank(summoner) for summoner in get_summoners()]
-    histories = [get_history(summoner) for summoner in get_summoners()]
-    mean_histories = [calc_mean_matches(matches) for matches in histories]
+    print("Get all histories, ....")
+    histories : List[Tuple[RANK_ID, HISTORY]]= [(RANK_TO_CLASS[s.tier, s.rank], [preprocess_match(i, s) for i in m]) for s, m in db.get_all_histories(match_limit=NB_GAMES)]
+    print("Calc mean history")
+    mean_histories = [calc_mean_matches(matches) for _, matches in histories]
+    print("Done")
     values = {}
 
     for history in mean_histories:
@@ -371,7 +374,8 @@ def prepare_data(df):
         df[key] = value
     # merge with main df bridge_df on key values
     X = df.values
-    return X, ranks
+    print("Finishing data preparation")
+    return X, [i for i, _ in histories]
 
 
 def train():
@@ -379,26 +383,35 @@ def train():
     scaler = StandardScaler()
     data, ranks = prepare_data(df_train)
 
-    print(df_train)
+    print("fit tranforming")
     # generate binary values using get_dummies
     X_train = scaler.fit_transform(data)
     y_train = ranks
+    print("Start training ...")
     reg = RandomForestRegressor(max_depth=10).fit(X_train, y_train)
     print("Mean squared error:", mean_squared_error(y_train, reg.predict(X_train)) ** 0.5)
     return reg, scaler
 
 
-def submit(reg, scaler, summoner):
+def submit(reg, scaler, target_summoner : Summoner, target_matches : List[Match]):
     df_test = pd.DataFrame()
 
-    for key, value in calc_mean_matches(get_history(summoner)).items():
+    preprocess_matchs = [preprocess_match(match, target_summoner) for match in target_matches]
+    for key, value in calc_mean_matches(preprocess_matchs).items():
         df_test[key] = [value]
 
     print(df_test)
     X_test = scaler.transform(df_test.values)
     rank = reg.predict(X_test)
-    print(f"{summoner} is {ranksNames[int(rank)] if rank < len(ranksNames) else 'rank'+str(rank)}")
+    print(f"{target_summoner.summonerName} is {ranksNames[int(rank)] if rank < len(ranksNames) else 'rank'+str(rank)}")
 
+def main():
+    data_crawler = DataCrawler()
+    loop = asyncio.get_event_loop()
+    print(f"Fetching match for {sys.argv[1]} from Riot API")
+    target_summoner, target_matches = loop.run_until_complete(data_crawler.get_matches_for_summoner_name(sys.argv[1], NB_GAMES))
+    r, s = train()
+    submit(r, s, target_summoner, target_matches)
 
-r, s = train()
-submit(r, s, sys.argv[1])
+if __name__ == '__main__':
+    main()
