@@ -1,4 +1,5 @@
 import asyncio
+from statistics import mean, geometric_mean, harmonic_mean, median, mode, pvariance
 from typing import Tuple
 
 import sys
@@ -6,11 +7,14 @@ import json
 from typing import List, Dict, Tuple, Any
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, SGDClassifier, LogisticRegression
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
+from sklearn.svm import SVC
 
 from DataCrawler.DataCrawler import DataCrawler
 from DataCrawler.Database import Database
@@ -342,24 +346,35 @@ def preprocess_match(match : Match, summoner : Summoner) -> dict:
     new_data["win"] = match_data["win"]
     return new_data
 
-def calc_mean_matches(matches):
+def get_all_data(matches):
     summed_up = {}
     for match in matches:
         for key, value in match.items():
             if key not in summed_up:
-                summed_up[key] = value
+                summed_up[key] = [value]
             else:
-                summed_up[key] += value
-    return {key: value / len(matches) for key, value in summed_up.items()}
+                summed_up[key].append(value)
+    return summed_up
+
+def calc_stats_on_matches(matches, name, fct):
+    champions = [m["champion"] for m in matches]
+    result = {(name + key): fct(value) for key, value in get_all_data(matches).items()}
+    result["champion"] = max(champions, key=lambda d: champions.count(d))
+    return result
+
+def calc_all_stats_matches(matches):
+    fcts = {"mean": mean, "gmean": geometric_mean, "hmean": harmonic_mean, "median": median, "mode": mode, "variance": pvariance}
+    stats = [calc_stats_on_matches(matches, k, i) for k, i in fcts.items()]
+    return {k: v for d in stats for k, v in d.items()}
 
 HISTORY = List[dict]
 RANK_ID = int
 
 def prepare_data(df):
     print("Get all histories, ....")
-    histories : List[Tuple[RANK_ID, HISTORY]]= [(RANK_TO_CLASS[s.tier, s.rank], [preprocess_match(i, s) for i in m]) for s, m in db.get_all_histories(match_limit=NB_GAMES)]
+    histories : List[Tuple[RANK_ID, HISTORY]] = [(RANK_TO_CLASS[s.tier, s.rank], [preprocess_match(i, s) for i in m]) for s, m in db.get_all_histories(match_limit=NB_GAMES)]
     print("Calc mean history")
-    mean_histories = [calc_mean_matches(matches) for _, matches in histories]
+    mean_histories = [calc_all_stats_matches(matches) for _, matches in histories]
     print("Done")
     values = {}
 
@@ -383,27 +398,40 @@ def train():
     scaler = StandardScaler()
     data, ranks = prepare_data(df_train)
 
-    print("fit tranforming")
+    print("fit transforming")
     # generate binary values using get_dummies
     X_train = scaler.fit_transform(data)
     y_train = ranks
-    print("Start training ...")
-    reg = RandomForestRegressor(max_depth=10).fit(X_train, y_train)
-    print("Mean squared error:", mean_squared_error(y_train, reg.predict(X_train)) ** 0.5)
-    return reg, scaler
+    regs = {
+        "RandomForestRegressor": RandomForestRegressor(max_depth=10),
+        "RandomForestClassifier": RandomForestClassifier(n_estimators=500, max_depth=20, criterion='gini', max_features="auto", max_samples=None, verbose=0),
+        "SGDClassifier": SGDClassifier(loss='hinge', verbose=0).fit(X_train, y_train),
+        "OneVsRestClassifier(LogisticRegression)": OneVsRestClassifier(LogisticRegression(C=1.0, max_iter=10, n_jobs=-1, verbose=0, solver='sag')),
+        "OneVsOneClassifier(LogisticRegression)": OneVsOneClassifier(LogisticRegression(C=1.0, max_iter=100, n_jobs=-1, verbose=0, solver='newton-cg')),
+        "KNeighborsClassifier": KNeighborsClassifier(n_neighbors=4, weights='distance'),
+        "OneVsRestClassifier(SVC)": OneVsRestClassifier(SVC(C=3.0, verbose=0)),
+        "OneVsOneClassifier(SVC)": OneVsOneClassifier(SVC(C=3.0, verbose=0)),
+    }
+    regs_fitted = dict()
+    for i, k in regs.items():
+        print(f"Start training {i}...")
+        regs_fitted[i] = k.fit(X_train, y_train)
+        print("Mean squared error:", mean_squared_error(y_train, regs_fitted[i].predict(X_train)) ** 0.5)
+    return regs_fitted, scaler
 
 
-def submit(reg, scaler, target_summoner : Summoner, target_matches : List[Match]):
+def submit(regs, scaler, target_summoner : Summoner, target_matches : List[Match]):
     df_test = pd.DataFrame()
 
     preprocess_matchs = [preprocess_match(match, target_summoner) for match in target_matches]
-    for key, value in calc_mean_matches(preprocess_matchs).items():
+    for key, value in calc_all_stats_matches(preprocess_matchs).items():
         df_test[key] = [value]
 
     print(df_test)
     X_test = scaler.transform(df_test.values)
-    rank = reg.predict(X_test)
-    print(f"{target_summoner.summonerName} is {ranksNames[int(rank)] if rank < len(ranksNames) else 'rank'+str(rank)}")
+    for i, k in regs.items():
+        rank = k.predict(X_test)
+        print(f"{i}: {target_summoner.summonerName} is {ranksNames[int(rank)] if rank < len(ranksNames) else 'rank'+str(rank)}")
 
 def main():
     data_crawler = DataCrawler()
