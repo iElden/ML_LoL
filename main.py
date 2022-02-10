@@ -442,13 +442,33 @@ def submit(regs, scaler, target_summoner : Summoner, target_matches : List[Match
         rank = k.predict(X_test)
         print(f"{i}: {target_summoner.summonerName} is {ranksNames[int(rank)] if rank < len(ranksNames) else 'rank'+str(rank)}")
 
+def process_summoners_from_argv(r, s, data_crawler, loop):
+    for summoner_name in sys.argv[1:]:
+        try:
+            print(f"Fetching match for {summoner_name} from Riot API")
+            target_summoner, target_matches = loop.run_until_complete(data_crawler.get_matches_for_summoner_name(sys.argv[1], NB_GAMES))
+            submit(r, s, target_summoner, target_matches)
+        except Exception as e:
+            print(f"Caught exception while processing summoner {summoner_name}. {e.__class__.__name__}: {e}")
+
+def process_summoners_from_input_line(r, s, data_crawler, loop):
+    try:
+        summoner_name = input("Summoner name: ")
+        try:
+            print(f"Fetching match for {summoner_name} from Riot API")
+            target_summoner, target_matches = loop.run_until_complete(data_crawler.get_matches_for_summoner_name(sys.argv[1], NB_GAMES))
+            submit(r, s, target_summoner, target_matches)
+        except Exception as e:
+            print(f"Caught exception while processing summoner {summoner_name}. {e.__class__.__name__}: {e}")
+    except EOFError:
+        pass
+
 def main():
     data_crawler = DataCrawler()
     loop = asyncio.get_event_loop()
-    print(f"Fetching match for {sys.argv[1]} from Riot API")
-    target_summoner, target_matches = loop.run_until_complete(data_crawler.get_matches_for_summoner_name(sys.argv[1], NB_GAMES))
     r, s = train()
-    submit(r, s, target_summoner, target_matches)
+    process_summoners_from_argv(r, s, data_crawler, loop)
+    process_summoners_from_input_line(r, s, data_crawler, loop)
 
 if __name__ == '__main__':
     main()
