@@ -281,79 +281,83 @@ def preprocess_match(match : Match, summoner : Summoner) -> dict:
     # Lvl6Time
 
     # Champion
-    new_data["champion"] = match_data["championId"]
+    new_data["champion"] = match_data.get("championId", 0)
     # IsJgl
-    new_data["is_jgl"] = match_data["individualPosition"] == "JUNGLE"
+    new_data["is_jgl"] = match_data.get("individualPosition", 0) == "JUNGLE"
     # IsSupport
-    new_data["is_sup"] = match_data["individualPosition"] == "UTILITY"
+    new_data["is_sup"] = match_data.get("individualPosition", 0) == "UTILITY"
     # MatchLength
-    new_data["game_len"] = match_data["gameDuration"]
+    new_data["game_len"] = match_data.get("gameDuration", 0)
 
     # assists/min
-    new_data["assists"] = match_data["assists"] * 60 / match_data["gameDuration"]
+    new_data["assists"] = match_data.get("assists", 0) * 60 / match_data.get("gameDuration", 0)
     # deaths/min
-    new_data["deaths"] = match_data["deaths"] * 60 / match_data["gameDuration"]
+    new_data["deaths"] = match_data.get("deaths", 0) * 60 / match_data.get("gameDuration", 0)
     # kills/min
-    new_data["kills"] = match_data["kills"] * 60 / match_data["gameDuration"]
+    new_data["kills"] = match_data.get("kills", 0) * 60 / match_data.get("gameDuration", 0)
     # wardsKilled/min
-    new_data["wards_killed"] = match_data["wardsKilled"] * 60 / match_data["gameDuration"]
+    new_data["wards_killed"] = match_data.get("wardsKilled", 0) * 60 / match_data.get("gameDuration", 0)
     # wardsPlaced/min
-    new_data["wards_placed"] = match_data["wardsPlaced"] * 60 / match_data["gameDuration"]
+    new_data["wards_placed"] = match_data.get("wardsPlaced", 0) * 60 / match_data.get("gameDuration", 0)
     # visionScore/min
-    new_data["vision_score"] = match_data["visionScore"] * 60 / match_data["gameDuration"]
+    new_data["vision_score"] = match_data.get("visionScore", 0) * 60 / match_data.get("gameDuration", 0)
     # visionWardsBoughtInGame/min
-    new_data["vision_wards_bought"] = match_data["visionWardsBoughtInGame"] * 60 / match_data["gameDuration"]
+    new_data["vision_wards_bought"] = match_data.get("visionWardsBoughtInGame", 0) * 60 / match_data.get("gameDuration", 0)
     # sightWardsBoughtInGame/min
-    new_data["sight_wards_bought"] = match_data["sightWardsBoughtInGame"] * 60 / match_data["gameDuration"]
+    new_data["sight_wards_bought"] = match_data.get("sightWardsBoughtInGame", 0) * 60 / match_data.get("gameDuration", 0)
     # detectorWardsPlaced/min
-    new_data["detector_wards_placed"] = match_data["detectorWardsPlaced"] * 60 / match_data["gameDuration"]
+    new_data["detector_wards_placed"] = match_data.get("detectorWardsPlaced", 0) * 60 / match_data.get("gameDuration", 0)
     # totalDamageDealt/min
-    new_data["damage_dealt"] = match_data["totalDamageDealt"] * 60 / match_data["gameDuration"]
+    new_data["damage_dealt"] = match_data.get("totalDamageDealt", 0) * 60 / match_data.get("gameDuration", 0)
     # totalDamageTaken/min
-    new_data["damage_taken"] = match_data["totalDamageTaken"] * 60 / match_data["gameDuration"]
+    new_data["damage_taken"] = match_data.get("totalDamageTaken", 0) * 60 / match_data.get("gameDuration", 0)
     # totalMinionsKilled/min
-    new_data["minions_killed"] = match_data["totalMinionsKilled"] * 60 / match_data["gameDuration"]
+    new_data["minions_killed"] = match_data.get("totalMinionsKilled", 0) * 60 / match_data.get("gameDuration", 0)
     # damageDealtToBuildings/min
-    new_data["damage_to_buildings"] = match_data["damageDealtToBuildings"] * 60 / match_data["gameDuration"]
+    new_data["damage_to_buildings"] = match_data.get("damageDealtToBuildings", 0) * 60 / match_data.get("gameDuration", 0)
     # longestTimeSpentLiving in % of the game
-    new_data["longest_time_alive"] = match_data["longestTimeSpentLiving"] * 60 / match_data["gameDuration"]
+    new_data["longest_time_alive"] = match_data.get("longestTimeSpentLiving", 0) * 60 / match_data.get("gameDuration", 0)
     # %game spent dead
-    new_data["game_portion_dead"] = match_data["totalTimeSpentDead"] * 60 / match_data["gameDuration"]
+    new_data["game_portion_dead"] = match_data.get("totalTimeSpentDead", 0) * 60 / match_data.get("gameDuration", 0)
     # summoner1 mean uptime
-    new_data["summoner1_uptime"] = match_data["summoner1Casts"] / (match_data["gameDuration"] / cooldowns[str(match_data["summoner1Id"])])
+    new_data["summoner1_uptime"] = match_data.get("summoner1Casts", 0) / (match_data.get("gameDuration", 0) / cooldowns[str(match_data.get("summoner1Id", 0))])
     # summoner2 mean uptime
-    new_data["summoner2_uptime"] = match_data["summoner2Casts"] / (match_data["gameDuration"] / cooldowns[str(match_data["summoner2Id"])])
+    new_data["summoner2_uptime"] = match_data.get("summoner2Casts", 0) / (match_data.get("gameDuration", 0) / cooldowns[str(match_data.get("summoner2Id", 0))])
 
     # baronKills
-    new_data["baronKills"] = match_data["baronKills"]
+    new_data["baronKills"] = match_data.get("baronKills", 0)
     # dragonKills
-    new_data["dragonKills"] = match_data["dragonKills"]
+    new_data["dragonKills"] = match_data.get("dragonKills", 0)
     # inhibitorsLost
-    new_data["inhibitorsLost"] = match_data["inhibitorsLost"]
+    new_data["inhibitorsLost"] = match_data.get("inhibitorsLost", 0)
     # turretsLost
-    new_data["turretsLost"] = match_data["turretsLost"]
-    # time afk
-    new_data["time_afk"] = match_data["timePlayed"] - match_data["gameDuration"]
+    new_data["turretsLost"] = match_data.get("turretsLost", 0)
     # largestKillingSpree
-    new_data["largestKillingSpree"] = match_data["largestKillingSpree"]
+    new_data["largestKillingSpree"] = match_data.get("largestKillingSpree", 0)
     # gameEndedInEarlySurrender
-    new_data["gameEndedInEarlySurrender"] = match_data["gameEndedInEarlySurrender"]
+    new_data["gameEndedInEarlySurrender"] = match_data.get("gameEndedInEarlySurrender", 0)
     # gameEndedInSurrender
-    new_data["gameEndedInSurrender"] = match_data["gameEndedInSurrender"]
+    new_data["gameEndedInSurrender"] = match_data.get("gameEndedInSurrender", 0)
     # teamEarlySurrendered
-    new_data["teamEarlySurrendered"] = match_data["teamEarlySurrendered"]
+    new_data["teamEarlySurrendered"] = match_data.get("teamEarlySurrendered", 0)
     # win
-    new_data["win"] = match_data["win"]
+    new_data["win"] = match_data.get("win", 0.5)
+
+    # Handle bouteille API
+    for k, v in new_data.items():
+        if v < 0:
+            print(f"Bouteille API detected: got value {v} for {k}")
+            new_data[k] = 0
     return new_data
 
-def get_all_data(matches):
+def get_all_data(matches : List[Dict[str, Any]]) -> Dict[str, list]:
     summed_up = {}
     for match in matches:
         for key, value in match.items():
             if key not in summed_up:
-                summed_up[key] = [value]
+                summed_up[key] = [float(value)]
             else:
-                summed_up[key].append(value)
+                summed_up[key].append(float(value))
     return summed_up
 
 def calc_stats_on_matches(matches, name, fct):
@@ -363,7 +367,7 @@ def calc_stats_on_matches(matches, name, fct):
     return result
 
 def calc_all_stats_matches(matches):
-    fcts = {"mean": mean, "gmean": geometric_mean, "hmean": harmonic_mean, "median": median, "mode": mode, "variance": pvariance}
+    fcts = {"mean": mean, "hmean": harmonic_mean, "median": median, "mode": mode, "variance": pvariance}
     stats = [calc_stats_on_matches(matches, k, i) for k, i in fcts.items()]
     return {k: v for d in stats for k, v in d.items()}
 
@@ -372,7 +376,12 @@ RANK_ID = int
 
 def prepare_data(df):
     print("Get all histories, ....")
-    histories : List[Tuple[RANK_ID, HISTORY]] = [(RANK_TO_CLASS[s.tier, s.rank], [preprocess_match(i, s) for i in m]) for s, m in db.get_all_histories(match_limit=NB_GAMES)]
+    histories : List[Tuple[RANK_ID, HISTORY]] = []
+    for s, m in db.get_all_histories(match_limit=NB_GAMES):
+        try:
+            histories.append( (RANK_TO_CLASS[s.tier, s.rank], [preprocess_match(i, s) for i in m]) )
+        except Exception as e:
+            print(f"Unknown exception during process of summoner \"{s.summonerName}\"\n{e.__class__.__name__}: {e}")
     print("Calc mean history")
     mean_histories = [calc_all_stats_matches(matches) for _, matches in histories]
     print("Done")
@@ -405,7 +414,7 @@ def train():
     regs = {
         "RandomForestRegressor": RandomForestRegressor(max_depth=10),
         "RandomForestClassifier": RandomForestClassifier(n_estimators=500, max_depth=20, criterion='gini', max_features="auto", max_samples=None, verbose=0),
-        "SGDClassifier": SGDClassifier(loss='hinge', verbose=0).fit(X_train, y_train),
+#        "SGDClassifier": SGDClassifier(loss='hinge', verbose=0).fit(X_train, y_train),
         "OneVsRestClassifier(LogisticRegression)": OneVsRestClassifier(LogisticRegression(C=1.0, max_iter=10, n_jobs=-1, verbose=0, solver='sag')),
         "OneVsOneClassifier(LogisticRegression)": OneVsOneClassifier(LogisticRegression(C=1.0, max_iter=100, n_jobs=-1, verbose=0, solver='newton-cg')),
         "KNeighborsClassifier": KNeighborsClassifier(n_neighbors=4, weights='distance'),

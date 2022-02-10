@@ -52,10 +52,10 @@ class Database(MongoClient):
     def get_match_for_summoner(self, summoner : Summoner, limit : int=20, debug_index=None) -> List[Match]:
         if debug_index is not None and debug_index % 50 == 0:
             print(f"Summoners requested : {debug_index}")
-        r = self[self.DB]['match'].find({"metadata.participants": summoner.puuid}).limit(limit)
+        r = self[self.DB]['match'].find({"metadata.participants": summoner.puuid, "info.gameVersion":{"$regex":r"^12.*$"}}).limit(limit)
         return [Match(i) for i in r]
 
-    def get_all_histories(self, match_limit : int=20, summoner_limit : int=4000) -> Iterator[Tuple[Summoner, List[Match]]]:
+    def get_all_histories(self, match_limit : int=20, summoner_limit : int=8000) -> Iterator[Tuple[Summoner, List[Match]]]:
         summoners = self.get_all_summoner_with_crawled_match(limit=summoner_limit)
         return ((s, self.get_match_for_summoner(s, limit=match_limit, debug_index=i)) for i, s in enumerate(summoners))
 

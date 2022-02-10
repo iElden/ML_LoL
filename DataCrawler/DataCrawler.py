@@ -53,11 +53,11 @@ class DataCrawler:
 
     async def add_all_matchs(self):
         print("Get all summonners in database")
-        summoners = self.db.get_all_summoner_with_match_uncrawled(page_min=1, page_max=2)
+        summoners = self.db.get_all_summoner_with_match_uncrawled(page_min=2, page_max=2)
         length = len(summoners)
         for i, s in enumerate(summoners):
             print(f"{i}/{length}")
-            match_ids = await self.pantheon.getMatchlist(s.puuid, params={'count':50, 'type':'ranked'})
+            match_ids = await self.pantheon.getMatchlist(s.puuid, params={'count':50, 'type':'ranked', 'startTime': 1641510000})
             if len(match_ids) < 20: # Ignore if less than 20 matchs
                 continue
             tasks = [self.pantheon.getMatch(match_id) for match_id in match_ids if not self.db.is_match_in_database(match_id)]
